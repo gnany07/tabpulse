@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabPulse — Smart Tab Group Organizer &amp; RAM Saver</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header Bar -->
+    <header class="top-header">
+      <div class="brand-group">
+        <div class="brand-logo" title="TabPulse Organizer">⚡</div>
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-title">TabPulse</h1>
+            <span class="scope-pill" id="scopeToggleBtn" title="Click to toggle Current Window vs All Windows">Current Win</span>
+          </div>
+          <p class="brand-subtitle" id="headerStatsText">Loading tabs...</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="openWorkspacesBtn" class="icon-btn" title="Saved Workspaces (Save &amp; Restore Tab Sessions)">
+          📸
+        </button>
+        <button id="openSidePanelBtn" class="icon-btn" title="Open in Persistent Side Panel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+        </button>
+
+        <button id="autoModeToggle" class="auto-pill off" title="Toggle Real-Time Auto Grouping Mode">
+          <span class="status-dot"></span>
+          <span id="autoModeText">Auto: OFF</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Instant Cross-Window Tab Search Bar -->
+    <div class="search-bar-wrap">
+      <div class="search-input-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="tabSearchInput" class="search-input" placeholder="Search &amp; jump to any tab across all windows..." autocomplete="off" />
+        <button id="clearSearchBtn" class="search-clear-btn hidden" title="Clear search">✕</button>
+      </div>
+      <div id="searchResultsDropdown" class="search-results-dropdown hidden"></div>
+    </div>
+
+    <!-- Duplicate Tab Radar Card -->
+    <section class="section dup-section" id="dupSection">
+      <div class="dup-card clean" id="dupCard">
+        <div class="dup-header">
+          <div class="dup-title-group">
+            <span class="dup-count-badge" id="dupBadge">0</span>
+            <div>
+              <div class="dup-heading" id="dupHeading">Zero Duplicate Tabs</div>
+              <div class="dup-subheading" id="dupSubheading">Your workspace is clean &amp; deduplicated</div>
+            </div>
+          </div>
+          <div class="dup-actions">
+            <button id="toggleDupDrawerBtn" class="btn-ghost hidden" title="Inspect Duplicate Clusters">Inspect ▾</button>
+            <button id="cleanAllDupsBtn" class="btn-amber hidden">🧹 Clean All</button>
+          </div>
+        </div>
+
+        <!-- Always-Visible Auto-Clean Duplicate Toggle Row -->
+        <label class="dup-autoclean-bar" for="optQuickAutoCleanDups" title="Automatically delete existing and newly opened duplicate tabs whenever Auto Mode is ON">
+          <div class="dup-autoclean-label">
+            <span>🤖 Auto-Clean Duplicates</span>
+            <span class="dup-autoclean-hint">(in Auto Mode)</span>
+          </div>
+          <div class="switch-wrap">
+            <input type="checkbox" id="optQuickAutoCleanDups" class="switch-input" />
+            <span class="switch-slider"></span>
+          </div>
+        </label>
+
+        <!-- Expandable Duplicate Clusters & Normalization Filters -->
+        <div id="dupDrawer" class="dup-drawer hidden">
+          <div class="dup-filter-bar">
+            <label class="chip-check" title="Strip UTM tracking params, www, and trailing slashes">
+              <input type="checkbox" id="optSmartNormalize" checked />
+              <span>Smart URL</span>
+            </label>
+            <label class="chip-check" title="Treat URLs with different #hash anchors as duplicates">
+              <input type="checkbox" id="optIgnoreHash" checked />
+              <span>Ignore #Hash</span>
+            </label>
+            <label class="chip-check" title="Match tabs with identical Page Title on the same domain">
+              <input type="checkbox" id="optTitleMatch" />
+              <span>Title Match</span>
+            </label>
+            <select id="optKeepPolicy" class="mini-select" title="Which copy to keep when cleaning">
+              <option value="newest">Keep Newest</option>
+              <option value="oldest">Keep Oldest</option>
+            </select>
+          </div>
+
+          <div id="dupClustersList" class="dup-clusters-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Smart RAM Saver (Tab Sleeper) & Focus Mode Strip -->
+    <section class="section ram-section">
+      <div class="ram-card">
+        <div class="ram-top-row">
+          <div class="ram-info">
+            <span class="ram-badge" id="ramSavedBadge">⚡ 0 MB Saved</span>
+            <span class="ram-subtext" id="ramSubtext">0 sleeping tabs • click wakes tab</span>
+          </div>
+          <div class="ram-actions">
+            <button id="sleepIdleBtn" class="btn-cyan" title="Sleep inactive tabs to free RAM (skips active, pinned &amp; audio tabs)">💤 Sleep Idle</button>
+            <button id="focusModeBtn" class="btn-focus" title="Collapse &amp; sleep Media, Social, Shopping &amp; News groups">🎯 Focus</button>
+          </div>
+        </div>
+        <div class="ram-auto-row">
+          <span class="ram-auto-label">Auto-Sleep Idle Tabs (frees RAM automatically):</span>
+          <select id="optAutoSleepMinutes" class="mini-select" title="Automatically discard inactive tabs after idle period">
+            <option value="0">Off</option>
+            <option value="15">After 15m</option>
+            <option value="30">After 30m</option>
+            <option value="60">After 1h</option>
+            <option value="120">After 2h</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grouping Strategy Selector (5 Modes) -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-label">Grouping Strategy</span>
+        <div class="section-links">
+          <button id="openCustomRuleModalBtn" class="link-btn">+ Custom Rule</button>
+          <span class="divider-dot">•</span>
+          <button id="toggleOptionsDrawerBtn" class="link-btn">⚙️ Auto Options</button>
+        </div>
+      </div>
+
+      <div class="strategy-grid" id="strategyGrid" role="tablist">
+        <button class="strategy-btn active" data-strategy="topic" title="Smart Semantic Areas: AI &amp; LLM, Dev, Docs, Work, Media, Shopping, Social, Finance + Dynamic Clustering">
+          <span class="strat-icon">🧠</span>
+          <span class="strat-name">Topic / Area</span>
+        </button>
+        <button class="strategy-btn" data-strategy="domain" title="Group by clean Website Brand / Domain (GitHub, Google Docs, AWS, etc.)">
+          <span class="strat-icon">🌐</span>
+          <span class="strat-name">By Domain</span>
+        </button>
+        <button class="strategy-btn" data-strategy="custom" title="Prioritize your custom URL &amp; keyword rules">
+          <span class="strat-icon">⚡</span>
+          <span class="strat-name">Custom Rules</span>
+        </button>
+        <button class="strategy-btn" data-strategy="tree" title="Group tabs opened from the same parent search or research trail">
+          <span class="strat-icon">🌿</span>
+          <span class="strat-name">Opener Tree</span>
+        </button>
+        <button class="strategy-btn" data-strategy="recency" title="Group by Active (&lt;15m), Warm (15m-2h), and Stale (&gt;2h) tabs">
+          <span class="strat-icon">⏱️</span>
+          <span class="strat-name">By Activity</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Collapsible Auto Mode & Smart Options Drawer -->
+    <section id="optionsDrawer" class="section options-drawer hidden">
+      <div class="section-header">
+        <span class="section-label">Auto-Mode &amp; Grouping Preferences</span>
+        <button id="closeOptionsDrawerBtn" class="link-btn">Done ✕</button>
+      </div>
+
+      <div class="options-list">
+        <label class="option-row">
+          <div>
+            <div class="opt-title">Minimum Tabs to Form a Group</div>
+            <div class="opt-desc">Prevents single random tabs from cluttering the tab bar</div>
+          </div>
+          <select id="optMinTabs" class="mini-select">
+            <option value="1">1+ Tab</option>
+            <option value="2" selected>2+ Tabs</option>
+            <option value="3">3+ Tabs</option>
+          </select>
+        </label>
+
+        <label class="option-row">
+          <div>
+            <div class="opt-title">Auto-Collapse Inactive Groups</div>
+            <div class="opt-desc">Collapse other groups automatically when switching tabs in Auto Mode</div>
+          </div>
+          <input type="checkbox" id="optAutoCollapse" class="toggle-checkbox" />
+        </label>
+
+        <label class="option-row">
+          <div>
+            <div class="opt-title">Sort Tabs Alphabetically Within Groups</div>
+            <div class="opt-desc">Keep related URLs neatly ordered inside each group</div>
+          </div>
+          <input type="checkbox" id="optSortWithin" class="toggle-checkbox" checked />
+        </label>
+
+        <label class="option-row">
+          <div>
+            <div class="opt-title">Ignore Pinned Tabs</div>
+            <div class="opt-desc">Never pull pinned tabs into automatic or manual tab groups or sleep them</div>
+          </div>
+          <input type="checkbox" id="optIgnorePinned" class="toggle-checkbox" checked />
+        </label>
+
+        <label class="option-row">
+          <div>
+            <div class="opt-title">Auto-Clean Duplicate Tabs (Auto Mode)</div>
+            <div class="opt-desc">Automatically close existing &amp; newly opened duplicate tabs when Auto Mode is ON</div>
+          </div>
+          <input type="checkbox" id="optAutoPreventDups" class="toggle-checkbox" />
+        </label>
+      </div>
+    </section>
+
+    <!-- Live Dry-Run Group Preview Section -->
+    <section class="section preview-section">
+      <div class="section-header">
+        <span class="section-label" id="previewSectionTitle">Live Group Preview</span>
+        <span class="preview-summary-badge" id="previewSummaryBadge">0 Groups</span>
+      </div>
+
+      <div id="customRulesStrip" class="custom-rules-strip hidden"></div>
+      <div id="groupsPreviewList" class="groups-preview-list"></div>
+    </section>
+
+    <!-- Bottom Action Command Bar -->
+    <footer class="footer-bar">
+      <button id="organizeNowBtn" class="btn-primary">
+        <span id="organizeBtnText">✨ Organize Tabs Now</span>
+      </button>
+
+      <div class="quick-tools-row">
+        <button id="collapseAllBtn" class="btn-tool" title="Collapse all inactive tab groups">📁 Collapse</button>
+        <button id="expandAllBtn" class="btn-tool" title="Expand all tab groups">📂 Expand</button>
+        <button id="ungroupAllBtn" class="btn-tool" title="Ungroup all tabs back to normal strip">🧹 Ungroup</button>
+        <button id="undoBtn" class="btn-tool" disabled title="Restore previous tab layout before last organize">↩ Undo</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Custom Rule Builder Modal -->
+  <div id="customRuleModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚡ Custom Grouping Rule</h3>
+        <button id="closeRuleModalBtn" class="icon-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label for="ruleNameInput">Group Title</label>
+          <input type="text" id="ruleNameInput" placeholder="e.g. 🚀 Sprint Jira or 🎓 Georgia Tech" maxlength="28" />
+        </div>
+        <div class="field-group">
+          <label for="rulePatternInput">URL / Domain / Title Patterns (comma-separated, * wildcards supported)</label>
+          <input type="text" id="rulePatternInput" placeholder="e.g. *atlassian.net*, github.com/*/pull/*, localhost" />
+        </div>
+        <div class="field-group">
+          <label>Chrome Tab Group Color</label>
+          <div class="color-picker-row" id="ruleColorPicker">
+            <button type="button" class="color-dot active" data-color="blue" style="background:#3b82f6" title="Blue"></button>
+            <button type="button" class="color-dot" data-color="purple" style="background:#a855f7" title="Purple"></button>
+            <button type="button" class="color-dot" data-color="cyan" style="background:#06b6d4" title="Cyan"></button>
+            <button type="button" class="color-dot" data-color="green" style="background:#10b981" title="Green"></button>
+            <button type="button" class="color-dot" data-color="yellow" style="background:#eab308" title="Yellow"></button>
+            <button type="button" class="color-dot" data-color="orange" style="background:#f97316" title="Orange"></button>
+            <button type="button" class="color-dot" data-color="red" style="background:#ef4444" title="Red"></button>
+            <button type="button" class="color-dot" data-color="pink" style="background:#ec4899" title="Pink"></button>
+            <button type="button" class="color-dot" data-color="grey" style="background:#94a3b8" title="Grey"></button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelRuleBtn" class="btn-tool">Cancel</button>
+        <button id="saveRuleBtn" class="btn-primary" style="padding: 8px 16px;">Save Rule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workspace Sessions Modal (Save & Restore Tab Groups) -->
+  <div id="workspacesModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h3>📸 Workspace Sessions</h3>
+        <button id="closeWorkspacesModalBtn" class="icon-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="ws-save-row">
+          <input type="text" id="workspaceNameInput" placeholder="Name current window (e.g. AI Research, Sprint 42)" maxlength="32" />
+          <button id="saveWorkspaceBtn" class="btn-primary" style="padding: 7px 12px; font-size: 11.5px; white-space: nowrap;">+ Save</button>
+        </div>
+        <label class="chip-check" style="margin-top: -2px;">
+          <input type="checkbox" id="closeAfterSaveCheckbox" />
+          <span>Close unpinned tabs after saving (frees 100% RAM!)</span>
+        </label>
+        <div class="ws-list-label">Saved Workspaces</div>
+        <div id="workspacesList" class="workspaces-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Non-blocking Toast Notification -->
+  <div id="toastBanner" class="toast-banner hidden">
+    <span id="toastText">Organized!</span>
+  </div>
+
+  <script src="../engine/dedup.js"></script>
+  <script src="../engine/classifiers.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

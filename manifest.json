@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "TabPulse - Smart Tab Group Organizer, RAM Saver & Duplicate Cleaner",
+  "version": "1.1.0",
+  "description": "Smart tab group organizer (Auto & Manual) with Duplicate Tab Cleaner, RAM Saver Tab Sleeper, Focus Mode & Workspaces.",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "sidePanel",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "TabPulse - Smart Tab Organizer & RAM Saver",
+    "default_popup": "ui/dashboard.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "ui/dashboard.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "organize-tabs": {
+      "suggested_key": {
+        "default": "Alt+Shift+O",
+        "mac": "Alt+Shift+O"
+      },
+      "description": "Organize tabs using active grouping strategy"
+    },
+    "clean-duplicates": {
+      "suggested_key": {
+        "default": "Alt+Shift+D",
+        "mac": "Alt+Shift+D"
+      },
+      "description": "Clean duplicate tabs"
+    },
+    "sleep-inactive": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "Alt+Shift+S"
+      },
+      "description": "Sleep inactive tabs to save RAM"
+    }
+  }
+}
