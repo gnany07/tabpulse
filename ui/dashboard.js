@@ -125,9 +125,13 @@
     if (!currentState) return;
     const { settings, totalTabsCount, existingGroupsCount, windowCount, hasUndoSnapshot, plan, dedup, ramStats, sessions } = currentState;
 
-    // 1. Header & Scope
-    const scopeText = settings.scope === 'all' ? `All Wins (${windowCount})` : 'Current Win';
-    scopeToggleBtn.textContent = scopeText;
+    // 1. Header & Window Scope (only show multi-window toggle when 2+ Chrome windows are open)
+    if (windowCount > 1) {
+      scopeToggleBtn.classList.remove('hidden');
+      scopeToggleBtn.textContent = settings.scope === 'all' ? `All ${windowCount} Windows` : 'This Window';
+    } else {
+      scopeToggleBtn.classList.add('hidden');
+    }
     headerStatsText.textContent = `${totalTabsCount} Open Tabs • ${existingGroupsCount} Active Groups`;
 
     // 1b. RAM Saver & Focus Card
@@ -647,7 +651,11 @@
     });
     if (res && res.ok) {
       const r = res.result;
-      showToast(`🎯 Focus Mode: Collapsed ${r.collapsedGroups} & slept ${r.sleptTabs} distraction tab(s)!`);
+      if (r.groupedDistractions > 0) {
+        showToast(`🎯 Focus Mode: Paused ${r.groupedDistractions} distraction tab(s) & slept ${r.sleptTabs}!`);
+      } else {
+        showToast('🎯 Focus Mode: No distraction tabs (X, YouTube, Reddit, etc.) open!');
+      }
       await refreshState();
     }
   });

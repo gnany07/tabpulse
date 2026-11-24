@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TabPulse - Smart Tab Group Organizer, RAM Saver & Duplicate Cleaner",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Smart tab group organizer (Auto & Manual) with Duplicate Tab Cleaner, RAM Saver Tab Sleeper, Focus Mode & Workspaces.",
   "permissions": [
     "tabs",
