@@ -105,8 +105,76 @@ function generateIconPng(size) {
   ]);
 }
 
+function generateFocusIconPng(size) {
+  const rawRows = [];
+  const center = size / 2;
+  const radius = size * 0.45;
+
+  for (let y = 0; y < size; y++) {
+    const row = Buffer.alloc(1 + size * 4);
+    row[0] = 0;
+
+    for (let x = 0; x < size; x++) {
+      const idx = 1 + x * 4;
+      const nx = (x - center) / radius;
+      const ny = (y - center) / radius;
+
+      const squircle = Math.pow(Math.abs(nx), 3.2) + Math.pow(Math.abs(ny), 3.2);
+      if (squircle > 1.0) {
+        row[idx] = 0;
+        row[idx + 1] = 0;
+        row[idx + 2] = 0;
+        row[idx + 3] = 0;
+        continue;
+      }
+
+      // Vivid Purple -> Rose Focus Mode gradient background
+      const t = (x + y) / (2 * size);
+      let r = Math.round(147 * (1 - t) + 236 * t);
+      let g = Math.round(51 * (1 - t) + 72 * t);
+      let b = Math.round(234 * (1 - t) + 153 * t);
+
+      // Draw crisp white concentric target rings + center bullseye dot
+      const d = Math.sqrt(nx * nx + ny * ny);
+      if ((d >= 0.52 && d <= 0.68) || (d <= 0.24)) {
+        r = 255; g = 255; b = 255;
+      }
+
+      row[idx] = r;
+      row[idx + 1] = g;
+      row[idx + 2] = b;
+      row[idx + 3] = 255;
+    }
+    rawRows.push(row);
+  }
+
+  const rawData = Buffer.concat(rawRows);
+  const compressed = zlib.deflateSync(rawData);
+
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
+
+  return Buffer.concat([
+    signature,
+    makeChunk('IHDR', ihdr),
+    makeChunk('IDAT', compressed),
+    makeChunk('IEND', Buffer.alloc(0))
+  ]);
+}
+
 [16, 32, 48, 128].forEach((sz) => {
   const filePath = path.join(iconsDir, `icon${sz}.png`);
   fs.writeFileSync(filePath, generateIconPng(sz));
   console.log(`Generated ${filePath}`);
+
+  const focusPath = path.join(iconsDir, `focus${sz}.png`);
+  fs.writeFileSync(focusPath, generateFocusIconPng(sz));
+  console.log(`Generated ${focusPath}`);
 });

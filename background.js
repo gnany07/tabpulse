@@ -27,8 +27,9 @@ const DEFAULT_SETTINGS = {
   sortWithinGroups: true,
   ungroupSingletons: true,
   alwaysApplyCustomRules: true,
-  // RAM Saver (Tab Sleeper)
+  // RAM Saver (Tab Sleeper) & Focus Mode
   autoSleepMinutes: 0, // 0 = off, 15, 30, 60, 120
+  focusModeActive: false,
   // Duplicate options
   smartNormalize: true,
   ignoreHash: true,
@@ -126,16 +127,43 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 /**
- * Updates the extension toolbar badge with duplicate count or Auto status.
+ * Updates the extension toolbar icon & badge to reflect Focus Mode, Duplicate Count, or Auto status.
  */
 async function updateDuplicateBadge() {
   try {
+    // 1. Update toolbar icon & tooltip for Focus Mode vs Normal Mode
+    if (cachedSettings.focusModeActive) {
+      await chrome.action.setIcon({
+        path: {
+          16: 'icons/focus16.png',
+          32: 'icons/focus32.png',
+          48: 'icons/focus48.png',
+          128: 'icons/focus128.png'
+        }
+      });
+      await chrome.action.setTitle({ title: 'TabPulse — 🎯 Focus Mode ACTIVE (Click to manage)' });
+    } else {
+      await chrome.action.setIcon({
+        path: {
+          16: 'icons/icon16.png',
+          32: 'icons/icon32.png',
+          48: 'icons/icon48.png',
+          128: 'icons/icon128.png'
+        }
+      });
+      await chrome.action.setTitle({ title: 'TabPulse — Smart Tab Organizer & RAM Saver' });
+    }
+
+    // 2. Update toolbar badge text & color
     const query = cachedSettings.scope === 'all' ? {} : { lastFocusedWindow: true };
     const tabs = await chrome.tabs.query(query);
     const dedupResult = self.TabPulseDedup.findDuplicateClusters(tabs, cachedSettings);
     const dupCount = dedupResult.totalDuplicateTabsToClose;
 
-    if (dupCount > 0) {
+    if (cachedSettings.focusModeActive) {
+      await chrome.action.setBadgeText({ text: 'FOC' });
+      await chrome.action.setBadgeBackgroundColor({ color: '#a855f7' });
+    } else if (dupCount > 0) {
       await chrome.action.setBadgeText({ text: String(dupCount) });
       await chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
     } else if (cachedSettings.autoMode) {
@@ -426,11 +454,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
 
       case 'ACTIVATE_FOCUS_MODE': {
-        const res = await self.TabPulseSleeper.activateFocusMode(
-          cachedSettings.scope === 'all' ? null : msg.windowId,
-          cachedSettings
-        );
-        sendResponse({ ok: true, result: res });
+        const nextActive = msg.forceState !== undefined
+          ? Boolean(msg.forceState)
+          : !cachedSettings.focusModeActive;
+
+        await saveSettings({ focusModeActive: nextActive });
+        let res;
+        if (nextActive) {
+          res = await self.TabPulseSleeper.activateFocusMode(
+            cachedSettings.scope === 'all' ? null : msg.windowId,
+            cachedSettings
+          );
+        } else {
+          res = await self.TabPulseSleeper.deactivateFocusMode(
+            cachedSettings.scope === 'all' ? null : msg.windowId
+          );
+        }
+        await updateDuplicateBadge();
+        sendResponse({ ok: true, focusModeActive: nextActive, result: res });
         break;
       }
 

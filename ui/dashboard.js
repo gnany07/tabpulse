@@ -140,6 +140,13 @@
       ramSubtext.textContent = `${ramStats.sleepingCount} sleeping • ${ramStats.eligibleToSleepCount} idle eligible`;
     }
     optAutoSleepMinutes.value = String(settings.autoSleepMinutes || 0);
+    if (settings.focusModeActive) {
+      focusModeBtn.classList.add('active');
+      focusModeBtn.textContent = '🎯 Focus: ON';
+    } else {
+      focusModeBtn.classList.remove('active');
+      focusModeBtn.textContent = '🎯 Focus';
+    }
 
     // 1c. Render Workspaces list if modal open
     renderWorkspacesList(sessions || []);
@@ -650,11 +657,15 @@
       windowId: currentState.windowId
     });
     if (res && res.ok) {
-      const r = res.result;
-      if (r.groupedDistractions > 0) {
-        showToast(`🎯 Focus Mode: Paused ${r.groupedDistractions} distraction tab(s) & slept ${r.sleptTabs}!`);
+      if (res.focusModeActive) {
+        const r = res.result;
+        if (r.groupedDistractions > 0) {
+          showToast(`🎯 Focus ON: Paused ${r.groupedDistractions} distraction tab(s) & slept ${r.sleptTabs}!`);
+        } else {
+          showToast('🎯 Focus Mode ON (Icon updated!)');
+        }
       } else {
-        showToast('🎯 Focus Mode: No distraction tabs (X, YouTube, Reddit, etc.) open!');
+        showToast('🎯 Focus Mode OFF — distractions restored');
       }
       await refreshState();
     }

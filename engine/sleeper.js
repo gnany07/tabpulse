@@ -215,6 +215,26 @@
     };
   }
 
+  /**
+   * Exits Focus Mode: expands (or ungroups) the "🎯 Paused (Focus)" group so distractions are accessible again.
+   */
+  async function deactivateFocusMode(windowId = null) {
+    const query = windowId ? { windowId } : {};
+    const groups = await chrome.tabGroups.query(query);
+    let restoredGroups = 0;
+
+    for (const g of groups) {
+      if ((g.title || '').toLowerCase().includes('paused (focus)')) {
+        try {
+          await chrome.tabGroups.update(g.id, { collapsed: false });
+          restoredGroups++;
+        } catch (_) {}
+      }
+    }
+
+    return { restoredGroups };
+  }
+
   const api = {
     AVG_MB_PER_TAB,
     DISTRACTION_DOMAINS,
@@ -223,7 +243,8 @@
     formatRamMB,
     getRamStats,
     sleepInactiveTabs,
-    activateFocusMode
+    activateFocusMode,
+    deactivateFocusMode
   };
 
   globalScope.TabPulseSleeper = api;

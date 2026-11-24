@@ -1083,6 +1083,13 @@ body {
   color: #ffffff;
 }
 
+.btn-focus.active {
+  background: linear-gradient(135deg, #9333ea, #ec4899);
+  border-color: #f0abfc;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55);
+}
+
 .ram-auto-row {
   display: flex;
   justify-content: space-between;
